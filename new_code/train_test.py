@@ -39,18 +39,28 @@ def train_model(model, x_train, y_train, x_val, y_val, epochs=50, batch_size=64)
 # Evaluation Function
 def evaluate_model(model, x_test, y_test):
     predictions = model.predict(x_test)
+
+    # Ensure predictions match the expected shape
+    print(f"Predictions shape: {predictions.shape}, Ground Truth shape: {y_test.shape}")
+
+    # Reshape appropriately to avoid broadcasting issues
     predictions_flat = predictions.reshape(predictions.shape[0], -1)
     y_test_flat = y_test.reshape(y_test.shape[0], -1)
+
+    # Ensure both have the same shape before NMSE computation
+    if predictions_flat.shape != y_test_flat.shape:
+        raise ValueError(f"Shape mismatch! Predictions: {predictions_flat.shape}, Ground Truth: {y_test_flat.shape}")
 
     nmse = np.mean(np.linalg.norm(y_test_flat - predictions_flat, axis=1) ** 2 /
                    np.linalg.norm(y_test_flat, axis=1) ** 2)
     nmse_db = 10 * np.log10(nmse)  # Convert to dB scale
     return nmse_db
 
+
 # Main Function
 if __name__ == "__main__":
     # Generate data
-    X_noisy, X_clean = generate_data(num_samples=20000)
+    X_noisy, X_clean = generate_data(num_samples=20000, num_antennas=4, num_users=2, num_irs_elements=8, noise_std=0.1)
 
     # Split data into training, validation, and testing sets
     X_train, X_test, Y_train, Y_test = train_test_split(X_noisy, X_clean, test_size=0.2, random_state=42)
